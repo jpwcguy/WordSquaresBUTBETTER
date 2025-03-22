@@ -5,16 +5,27 @@
 #include <unordered_set>
 #include <unordered_map>
 
+//added for printbox
+
+#include <vector>
+std::vector<std::string> g_output_buffer;
+
+constexpr int BOXES_PER_ROW = 27;
+int g_box_count = 0;
+
+
+//
+
 //Path to the dictionary file
 //Recommended source: https://raw.githubusercontent.com/andrewchen3019/wordle/refs/heads/main/Collins%20Scrabble%20Words%20(2019).txt
-#define DICTIONARY "../../dictionaries/scrabble_words.txt"
+#define DICTIONARY "./scrabble_words.txt"
 //Path to the word frequency file
 //Recommended source: https://www.kaggle.com/datasets/wheelercode/dictionary-word-frequency
-#define FREQ_FILTER "../../dictionaries/ngram_freq_dict.csv"
+#define FREQ_FILTER "./ngram_freq_dict.csv"
 //Width of the word grid
-#define SIZE_W 5
+#define SIZE_W 6
 //Height of the word grid
-#define SIZE_H 5
+#define SIZE_H 6
 //Filter horizontal words to be in the top-N (or 0 for all words)
 #define MIN_FREQ_W 20000
 //Filter vertical words to be in the top-N (or 0 for all words)
@@ -73,29 +84,62 @@ void LoadFreq(const char* fname) {
   std::cout << "Loaded " << num_words << " words." << std::endl;
 }
 
-//Print a solution
+// //Print a solution
+// void PrintBox(char* words) {
+//   //Do a uniqueness check if requested
+//   if (UNIQUE && SIZE_H == SIZE_W) {
+//     for (int i = 0; i < SIZE_H; ++i) {
+//       int num_same = 0;
+//       for (int j = 0; j < SIZE_W; ++j) {
+//         if (words[i * SIZE_W + j] == words[j * SIZE_W + i]) {
+//           num_same += 1;
+//         }
+//       }
+//       if (num_same == SIZE_W) { return; }
+//     }
+//   }
+//   //Print the grid
+//   for (int h = 0; h < SIZE_H; ++h) {
+//     for (int w = 0; w < SIZE_W; ++w) {
+//       std::cout << words[h * SIZE_W + w];
+//     }
+//     std::cout << std::endl;
+//   }
+//   std::cout << std::endl;
+// }
+//modifed by me
 void PrintBox(char* words) {
-  //Do a uniqueness check if requested
-  if (UNIQUE && SIZE_H == SIZE_W) {
-    for (int i = 0; i < SIZE_H; ++i) {
-      int num_same = 0;
-      for (int j = 0; j < SIZE_W; ++j) {
-        if (words[i * SIZE_W + j] == words[j * SIZE_W + i]) {
-          num_same += 1;
-        }
-      }
-      if (num_same == SIZE_W) { return; }
-    }
-  }
-  //Print the grid
+  std::vector<std::string> lines;
+  lines.push_back("+" + std::string(SIZE_W, '-') + "+");
+
   for (int h = 0; h < SIZE_H; ++h) {
+    std::string line = "|";
     for (int w = 0; w < SIZE_W; ++w) {
-      std::cout << words[h * SIZE_W + w];
+      line += words[h * SIZE_W + w];
     }
-    std::cout << std::endl;
+    line += "|";
+    lines.push_back(line);
   }
-  std::cout << std::endl;
+
+  lines.push_back("+" + std::string(SIZE_W, '-') + "+");
+
+  if (g_output_buffer.empty()) {
+    g_output_buffer = lines;
+  } else {
+    for (size_t i = 0; i < lines.size(); ++i) {
+      g_output_buffer[i] += "  " + lines[i];
+    }
+  }
+
+  g_box_count++;
+  if (g_box_count % BOXES_PER_ROW == 0) {
+    for (const auto& line : g_output_buffer)
+      std::cout << line << std::endl;
+    g_output_buffer.clear();
+  }
 }
+
+
 
 void BoxSearch(Trie* trie, Trie* vtries[VTRIE_SIZE], int pos) {
   //Reset when coming back to first letter
@@ -173,6 +217,13 @@ int main(int argc, char* argv[]) {
 
   //Run the search
   BoxSearch(nullptr, vtries, 0);
+  //modified
+  if (!g_output_buffer.empty()) {
+    for (const auto& line : g_output_buffer)
+      std::cout << line << std::endl;
+  }
+  
   std::cout << "Done." << std::endl;
+
   return 0;
 }
